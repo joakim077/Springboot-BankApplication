@@ -20,7 +20,7 @@ services:
         - mysql-bank-app-vol:/var/lib/mysql
     
     bankapp:
-      image: joakim077/spring-boot-bankapp:v1
+      image: joakim077/spring-boot-bankapp
       container_name: bankapp
       environment:
         SPRING_DATASOURCE_USERNAME: root
