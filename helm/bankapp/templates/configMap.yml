@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configmap.name }} 
+  namespace: {{ default "bankapp-namespace" .Values.namespace }}
+data:
+  MYSQL_DATABASE: {{ .Values.configmap.data.MYSQL_DATABASE }} 
+  SPRING_DATASOURCE_URL: jdbc:mysql://{{ .Values.db_statefulset.name }}-0.{{ .Values.db_statefulset.name }}-headless.{{ default "bankapp-namespace" .Values.namespace }}.svc.cluster.local:3306/{{ .Values.configmap.data.MYSQL_DATABASE }}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+  SPRING_DATASOURCE_USERNAME: {{ .Values.configmap.data.SPRING_DATASOURCE_USERNAME }} 
+

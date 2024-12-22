@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.app_deployment.name }}
+  namespace: {{ default "bankapp-namespace" .Values.namespace }}
+  labels:
+    app: {{ .Values.app_deployment.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.app_deployment.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.app_deployment.name }}
+    spec:
+      initContainers:
+      - name: "wait-for-{{ .Values.db_statefulset.name }}"
+        image: busybox:1.28
+        command: ['sh', '-c', 'until nc -z {{ .Values.db_statefulset.name }}-0.{{ .Values.db_statefulset.name }}-headless 3306; do echo waiting for mysql; sleep 5; done;']
+      containers:
+      - name: {{ .Values.app_deployment.name }}
+        image: {{ .Values.image.app }}
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SPRING_DATASOURCE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Values.configmap.name }} 
+              key: SPRING_DATASOURCE_URL
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Values.configmap.name }} 
+              key: SPRING_DATASOURCE_USERNAME
+        - name: SPRING_DATASOURCE_PASSWORD        
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret  
+              key: SPRING_DATASOURCE_PASSWORD      
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: {{ .Values.app_deployment.mem_req}}
+            cpu: {{ .Values.app_deployment.cpu_req}}
+          limits:
+            memory: {{ .Values.app_deployment.mem_limit}}
+            cpu: {{ .Values.app_deployment.cpu_limit}}
