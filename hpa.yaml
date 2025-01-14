@@ -8,11 +8,11 @@ spec:
     kind: Deployment
     name: bankapp
   minReplicas: 1
-  maxReplicas: 6
+  maxReplicas: 3
   metrics:
   - type: Resource
     resource:
-      name: memory
+      name: cpu
       target:
         type: Utilization
-        averageUtilization: 20
+        averageUtilization: 60
