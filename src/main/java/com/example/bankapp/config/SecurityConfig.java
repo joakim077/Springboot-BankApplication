@@ -5,19 +5,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 
 @Configuration
-@EnableWebSecurity
 public class SecurityConfig {
 
     @Autowired
-    AccountService accountService;
+    private AccountService accountService;
 
     @Bean
     public static PasswordEncoder passwordEncoder() {
@@ -27,10 +26,12 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/actuator/**", "/custom-metrics") // Disable CSRF for specific endpoints
+                        .disable())
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/register").permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/actuator/**", "/custom-metrics", "/register").permitAll() // Public endpoints
+                        .anyRequest().authenticated() // All other endpoints require authentication
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
@@ -46,7 +47,7 @@ public class SecurityConfig {
                         .permitAll()
                 )
                 .headers(headers -> headers
-                        .frameOptions(frameOptions -> frameOptions.sameOrigin())
+                        .frameOptions(frameOptions -> frameOptions.sameOrigin()) // Allow same-origin frames
                 );
 
         return http.build();
@@ -55,6 +56,5 @@ public class SecurityConfig {
     @Autowired
     public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(accountService).passwordEncoder(passwordEncoder());
-
     }
 }

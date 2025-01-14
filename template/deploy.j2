@@ -1,0 +1,191 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: myconfigmap
+  labels:
+    app: myapplication
+data:
+  dbuser: root
+  dburl: jdbc:mysql://mycluster.default.svc.cluster.local:3306/BankDB?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mycluster-cluster-secret
+  namespace: default
+stringData:
+  rootUser: "root"
+  rootHost: "%"
+  rootPassword: "superSecret"
+---
+apiVersion: mysql.oracle.com/v2
+kind: InnoDBCluster
+metadata:
+  name: mycluster
+spec:
+  secretName: mycluster-cluster-secret
+  instances: 3
+  router:
+    instances: 1
+  tlsUseSelfSigned: true
+  datadirVolumeClaimTemplate:
+    accessModes: [ "ReadWriteOnce" ]
+    resources:
+      requests:
+        storage: 1Gi
+    storageClassName: gp2
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bankapp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bankapp
+  template:
+    metadata:
+      labels:
+        app: bankapp
+    spec:
+      containers:
+        - name: bankapp
+          image: {{ image }}
+          env:
+          - name: SPRING_DATASOURCE_USERNAME
+            valueFrom:
+              configMapKeyRef:
+                name: myconfigmap
+                key: dbuser
+          - name: SPRING_DATASOURCE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mycluster-cluster-secret
+                key: rootPassword
+          - name: SPRING_DATASOURCE_URL
+            valueFrom:
+              configMapKeyRef:
+                name: myconfigmap
+                key: dburl
+          resources:
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+          ports:
+          - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: app-svc
+  labels:
+    app: app-svc
+spec:
+  selector:
+    app: bankapp
+  type: ClusterIP
+  ports:
+    - port:  80
+      targetPort:  8080
+
+---
+
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: production-app
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: joakim@mail.com
+    privateKeySecretRef:
+      name: app 
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
+    
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: app
+spec:
+  secretName: app
+  issuerRef:
+    name: production-app
+    kind: ClusterIssuer
+  commonName: bank.joakim.online
+  dnsNames:
+  - bank.joakim.online
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-app-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: production-app
+
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: bank.joakim.online
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: my-app-service
+            port:
+              number: 80
+  tls:
+  - hosts:
+    - bank.joakim.online
+    secretName: app
+
+---
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: myapp
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: bankapp
+  minReplicas: 1
+  maxReplicas: 6
+  metrics:
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 20
+
+---

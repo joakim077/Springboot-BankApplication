@@ -1,0 +1,13 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: app-svc
+  labels:
+    app: bankapp
+spec:
+  selector:
+    app: bankapp
+  type: ClusterIP
+  ports:
+    - port:  80
+      targetPort:  8080

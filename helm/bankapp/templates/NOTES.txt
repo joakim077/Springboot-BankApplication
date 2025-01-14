@@ -1,6 +1,0 @@
-
-Now you can access Bankapp using NodePort service.
-
-open browser and hit the URL: HTTP://<Instanace_IP>:{{ default "30080" .Values.bankapp_svc.nodePort}}
-
-Additionally, you can configure Ingress for better traffic routing

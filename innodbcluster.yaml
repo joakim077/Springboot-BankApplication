@@ -1,0 +1,17 @@
+apiVersion: mysql.oracle.com/v2
+kind: InnoDBCluster
+metadata:
+  name: mycluster
+spec:
+  secretName: mycluster-cluster-secret
+  instances: 3
+  router:
+    instances: 1
+  tlsUseSelfSigned: true
+  datadirVolumeClaimTemplate:
+    accessModes: [ "ReadWriteOnce" ]
+    resources:
+      requests:
+        storage: 1Gi
+    storageClassName: gp2
+

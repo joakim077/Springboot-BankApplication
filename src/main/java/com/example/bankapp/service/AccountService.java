@@ -134,4 +134,14 @@ public class AccountService implements UserDetailsService {
         transactionRepository.save(creditTransaction);
     }
 
+    public boolean validateCredentials(String username, String password) {
+        // Add your logic to validate credentials, e.g., querying the database
+        // This is a placeholder implementation
+        Account account = findAccountByUsername(username);
+        if (account != null && account.getPassword().equals(password)) {
+            return true;
+        }
+        return false;
+    }
+
 }
