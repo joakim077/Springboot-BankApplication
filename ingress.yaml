@@ -15,7 +15,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: my-app-service
+            name: app-svc
             port:
               number: 80
       - path: /prometheus
