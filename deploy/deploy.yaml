@@ -55,7 +55,7 @@ spec:
     spec:
       containers:
         - name: bankapp
-          image: joakim077/springboot-application:818760e
+          image: joakim077/springboot-application:8d49e6a
           env:
           - name: SPRING_DATASOURCE_USERNAME
             valueFrom:
