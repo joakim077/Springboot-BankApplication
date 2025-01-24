@@ -1,8 +1,13 @@
 pipeline {
     agent any
+    
+    tools{
+        maven 'maven3'
+    }
 
     environment{
         DOCKER_IMAGE = 'joakim077/springboot-application:latest'
+        SONAR_SCANNER_HOME = tool 'sonar-scanner'
     }
 
     stages {
@@ -13,7 +18,31 @@ pipeline {
             }
         }
         
-        stage('Build') {
+        stage('Trivy fs scan') {
+            steps {
+                echo 'Scan fs'
+                sh 'trivy fs . --scanners vuln'
+            }
+        }
+        stage('Build Artifact') {
+            steps {
+                echo 'Building artifact'
+                sh 'mvn clean install'
+            }
+        }
+        stage('Sonar Scanner') {
+            steps {
+                withSonarQubeEnv('sonar-server') {
+                sh ''' $SONAR_SCANNER_HOME/bin/sonar-scanner \
+                            -Dsonar.projectKey='Bankapp' \
+                            -Dsonar.projectName='Bankapp' \
+                            -Dsonar.java.binaries=target
+                '''
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
             steps {
                 echo 'building docker image'
                 sh 'docker build  -t "${DOCKER_IMAGE}" .'
