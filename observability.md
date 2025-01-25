@@ -22,4 +22,7 @@ kubectl apply -f servicemonitor.yaml
 ### Getting Grafana login secret for admin user
 ```bash 
 kubectl get secret --namespace monitoring kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
-kubectl port-forward svc/grafana 3000:80 -n monitoring --address=0.0.0.0
+kubectl port-forward svc/kube-prometheus-stack-grafana 3000:80 -n monitoring --address=0.0.0.0
+```
+
+Access the grafana and create Dashboards.
