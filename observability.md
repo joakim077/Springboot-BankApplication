@@ -20,4 +20,4 @@ kubectl get secret --namespace monitoring kube-prometheus-stack-grafana -o jsonp
 kubectl port-forward svc/kube-prometheus-stack-grafana 3000:80 -n monitoring --address=0.0.0.0
 ```
 
-Access the grafana and create Dashboards.
+Open Grafana, add the Prometheus data source using the URL: `http://kube-prometheus-stack-prometheus:9090`, and proceed to create dashboards.
