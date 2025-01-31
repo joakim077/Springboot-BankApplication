@@ -10,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 
 @Configuration
 public class SecurityConfig {
@@ -26,11 +27,11 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/actuator/**") // Disable CSRF for actuator endpoints
+                        .ignoringRequestMatchers("/actuator/**", "/custom-metrics", "/liveness", "/readiness", "/startup") // Disable CSRF for specific endpoints
                         .disable())
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/actuator/prometheus", "/register").permitAll() // Allow Prometheus endpoint without authentication
-                        .anyRequest().authenticated() // Protect other endpoints
+                        .requestMatchers("/actuator/**", "/custom-metrics", "/register", "/liveness", "/readiness", "/startup").permitAll() // Public endpoints
+                        .anyRequest().authenticated() // All other endpoints require authentication
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
