@@ -1,0 +1,8 @@
+prometheus:
+  prometheusSpec:
+    additionalScrapeConfigs:
+      - job_name: "spring-boot-application"
+        metrics_path: "/actuator/prometheus"
+        scrape_interval: 15s
+        static_configs:
+          - targets: ["app-svc.default.svc.cluster.local:80"]
