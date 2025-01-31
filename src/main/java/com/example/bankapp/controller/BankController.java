@@ -108,6 +108,14 @@ public class BankController {
         return "redirect:/dashboard";
     }
 
+    @GetMapping("/transactions")
+    public String transactionHistory(Model model) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Account account = accountService.findAccountByUsername(username);
+        model.addAttribute("transactions", accountService.getTransactionHistory(account));
+        return "transactions";
+    }
+
     @PostMapping("/transfer")
     public String transferAmount(@RequestParam String toUsername, @RequestParam BigDecimal amount, Model model) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
